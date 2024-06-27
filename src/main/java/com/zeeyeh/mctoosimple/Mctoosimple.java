@@ -1,18 +1,25 @@
 package com.zeeyeh.mctoosimple;
 
 import com.mojang.logging.LogUtils;
+import com.zeeyeh.mctoosimple.client.gui.ThirstGuiEventHandler;
+import com.zeeyeh.mctoosimple.config.ThirstConfig;
+import com.zeeyeh.mctoosimple.effect.EffectManager;
+import com.zeeyeh.mctoosimple.networking.MTSNetworking;
+import com.zeeyeh.mctoosimple.utils.ListenerUtil;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.InterModComms;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
 import net.minecraftforge.fml.event.lifecycle.InterModProcessEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
 
 import java.util.stream.Collectors;
@@ -26,20 +33,27 @@ import java.util.stream.Collectors;
 @Mod(GlobalConfig.MOD_ID)
 public class Mctoosimple
 {
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     public Mctoosimple()
     {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::enqueueIMC);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::processIMC);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ThirstConfig.COMMON_CONFIG);
+        ListenerUtil.registerListener(this::setup);
+        ListenerUtil.registerListener(this::setupClient);
+        ListenerUtil.registerListener(this::enqueueIMC);
+        ListenerUtil.registerListener(this::processIMC);
+        ListenerUtil.registerListener(this::processIMC);
+        EffectManager.register();
         MinecraftForge.EVENT_BUS.register(this);
+    }
+
+    private void setupClient(final FMLClientSetupEvent event) {
+        ThirstGuiEventHandler.register();
     }
 
     private void setup(final FMLCommonSetupEvent event)
     {
-        LOGGER.info("HELLO FROM PREINIT");
-        LOGGER.info("DIRT BLOCK >> {}", Blocks.DIRT.getRegistryName());
+        event.enqueueWork(MTSNetworking::register);
     }
 
     private void enqueueIMC(final InterModEnqueueEvent event)
